@@ -33,9 +33,20 @@ PHP web application that displays SSL Labs grades as a badge.  Cached assessment
 
 ### URL Parameters
 
-* **domain** - domain to test
+* **domain** - Domain of website to test
 * **sm=true** - Use small badges
 * **new=true** - Ignore cached assessment results and start a new assessment
 * **text=true** - Output grade only as plain text
 
-If the **domain** parameter is not specified, a form will allow the user to generate the HTML code.  This also generates a daily cron command to update the cached report using wget.
+If the **domain** parameter is not specified, a form will allow the user to generate the HTML code (if enabled).  This also generates a daily cron command to update the cached report using wget.
+
+### Config Variables
+
+These variables can be found at the top of the index.php script
+
+* **$public** - Specifies if the script can be used for any website (true) or restricted to the domains in $allowed_domains [Boolean]
+* **$generate_form** - Specifies if the HTML code generator form should be allowed [Boolean]
+* **$allowed_domains** - Allowed domains (if $public = false) [String Array]
+* **$img_path** - Path to large SVG images [String]
+* **$img_path_sm** - Path to small SVG images [String]
+* **$cache_age** - Maximum cached report age (in hours) [Integer]
