@@ -42,7 +42,7 @@ If the **domain** parameter is not specified, a form will allow the user to gene
 
 ### Config Variables
 
-These variables can be found at the top of the index.php script
+These config variables can be found at the top of the index.php script
 
 * **$public** - Specifies if the script can be used for any website (true) or restricted to the domains in $allowed_domains [Boolean]
 * **$generate_form** - Specifies if the HTML code generator form should be allowed [Boolean]
@@ -50,3 +50,20 @@ These variables can be found at the top of the index.php script
 * **$img_path** - Path to large SVG images [String]
 * **$img_path_sm** - Path to small SVG images [String]
 * **$cache_age** - Maximum cached report age (in hours) [Integer]
+
+### Badge Images
+
+The badge images are stored as SVG files.  The php script converts the SVG files into PNG files and outputs the PNG file over the http stream.
+
+### Dependencies
+* **ImageMagick** must be installed on the server
+* **PHP-SSLLabs-API Libarary** from [github.com/bjoernr-de/php-ssllabs-api](https://github.com/bjoernr-de/php-ssllabs-api) (included as sslLabsApi.php)
+
+
+### SSL Labs API
+
+This script uses the SSL Labs API (provided free of charge by Qualys SSL Labs).
+
+[SSL Labs API Documentation](https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs.md)
+
+[SSL Labs API Terms and conditions](https://www.ssllabs.com/about/terms.html)
