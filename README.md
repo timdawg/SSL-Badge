@@ -57,7 +57,7 @@ These config variables can be found in the config.php script
 
 The badge images are stored as SVG files.  The php script converts the SVG files into PNG files using ImageMagick and outputs the PNG file over the http stream. 
 
-If ImageMagick is not installed, the script will use the PNG image (if it exists).  Even if ImageMagick is installed, the script can work with the PNGimages instead of SVG images.  The script will auto detect which image file is installed.  If the PNG file does not exist and ImageMagick is not installed, then it will just use the SVG image.
+If ImageMagick is not installed, the script will use the PNG image (if it exists).  Even if ImageMagick is installed, the script can work with the PNG images instead of SVG images.  The script will auto detect which image file is installed.  If the PNG file does not exist and ImageMagick is not installed, then it will just use the SVG image.
 
 ### Dependencies
 * **ImageMagick** is recommended to be installed on the server
