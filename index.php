@@ -2,6 +2,10 @@
 	// Config Variables
 	require_once 'config.php';
 	
+	// Variables
+	define('PNG_HEADER', "\211PNG\r\n\032\n");
+	define('SVG_HEADER', "<svg");
+	
 	// Parameters
 	$test_domain = $_GET['domain'];
 	// Image Path (default to large badges, if &sm=true query string, then use the small badges)
@@ -20,8 +24,7 @@
 		$start_new = true;
 		$from_cache = false;
 		$cache_age = NULL;
-	}
-		
+	}		
 
 	// API
 	require_once 'sslLabsApi.php';
@@ -39,16 +42,6 @@
 		} else {
 			output_status($ssl_host->status);
 		}
-	}
-	// Preview Grade Image
-	elseif($public && $_GET['preview'] && $_GET['preview']!= '')
-	{	
-		output_grade($_GET['preview']);
-	}
-	// Preview Status Image
-	elseif($public && $_GET['preview_status'] && $_GET['preview_status']!= '')
-	{	
-		output_status($_GET['preview_status']);
 	}
 	// Generate HTML code
 	elseif($generate_form && $_POST['action']=='generate' && ($public || in_array($_POST['domain'], $allowed_domains)))
@@ -330,22 +323,52 @@
 	// Convert SVG Image to PNG
 	function convert_svg_png($img_file)
 	{
-		$image = new Imagick();
-		$svg_file = file_get_contents($img_file);
-		$svg_file = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'.$svg_file;
-		$image->setBackgroundColor(new ImagickPixel('transparent'));
-		$image->readImageBlob($svg_file);
-		$image->setImageFormat("png32");
-		return $image;
+		// Check for Imagick
+		if(file_exists($img_file) && class_exists("Imagick"))
+		{
+			// Convert SVG Image to PNG using Imagick
+			$image = new Imagick();
+			$svg_file = file_get_contents($img_file);
+			$svg_file = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'.$svg_file;
+			$image->setBackgroundColor(new ImagickPixel('transparent'));
+			$image->readImageBlob($svg_file);
+			$image->setImageFormat("png32");
+			return $image;
+		}
+		// Imagick not installed
+		elseif(file_exists(str_ireplace('.svg', '.png', $img_file)))
+		{
+			// Return stored PNG image instead
+			$png_file = file_get_contents(str_ireplace('.svg', '.png', $img_file));
+			return $png_file;			
+		}
+		// Imagick not installed and PNG file does not exist
+		elseif(file_exists($img_file))
+		{
+			// Return SVG image instead
+			$svg_file = file_get_contents($img_file);
+			return $svg_file;
+		}
+		else
+		{
+			return NULL;
+		}
 	}
 	
 	// Output image as inline html (base64)
 	function inline_image($img_file, $img_alt = "")
 	{
 		$image = convert_svg_png($img_file);
-		$html = '<img src="data:image/png;base64,';
-		$html .= base64_encode($image);
-		$html .= '" alt="' . $img_alt . '" title="' . $img_alt . '" />';
+		if(substr($image, 0, strlen(PNG_HEADER))==PNG_HEADER)
+		{
+			$html = '<img src="data:image/png;base64,';
+			$html .= base64_encode($image);
+			$html .= '" alt="' . $img_alt . '" title="' . $img_alt . '" />';
+		}
+		elseif(substr($image, 0, strlen(SVG_HEADER))==SVG_HEADER)
+		{
+			$html = $image;
+		}	
 		return $html;
 	}
 	
@@ -377,9 +400,16 @@
 			header('Cache-Control: no-cache, no-store');	
 			header('Pragma: no-cache');			
 		}
-		header('Content-Disposition: inline; filename="ssl_badge.png"');
-		header('Content-Type: image/png');		
-		
+		if(substr($image, 0, strlen(PNG_HEADER))==PNG_HEADER)
+		{
+			header('Content-Disposition: inline; filename="ssl_badge.png"');
+			header('Content-Type: image/png');		
+		}
+		elseif(substr($image, 0, strlen(SVG_HEADER))==SVG_HEADER)
+		{
+			header('Content-Disposition: inline; filename="ssl_badge.svg"');
+			header('Content-Type: image/svg+xml');		
+		}		
 		echo $image;
 		exit;
 	}
