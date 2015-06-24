@@ -53,10 +53,10 @@
 		?>
 		<html>
 		<head>
-			<title>SSL Labs Badge</title>
+			<title>SSL Badge</title>
 		</head>
 		<body>
-			<h2 align="center">SSL Labs Badge</h3>
+			<h2 align="center">SSL Badge</h3>
 			<p align="center"><?php echo $test_domain; ?></p>
 			<p align="center">HTML Code:<br /><textarea rows="6" cols="80" readonly><?php	
 				echo htmlspecialchars(badge_html($test_domain, $sm));
@@ -72,6 +72,7 @@
 			<p align="center">&nbsp;</p>
 			<p align="center"><button onclick="window.history.back()">&lt; Back</button></p>
 			<p align="center">&nbsp;</p>
+			<p align="center">This project is not affiliated with or officially supported by SSL Labs.</p>
 			<p align="center"><?php echo info_messages() ?></p>
 		</body>
 		</html>
@@ -83,12 +84,12 @@
 		?>
 		<html>
 		<head>
-			<title>SSL Labs Badge</title>
+			<title>SSL Badge</title>
 		</head>
 		<body>
 			<form action="" method="post">
 			<input type="hidden" name="action" value="generate">
-			<h2 align="center">SSL Labs Badge</h3>
+			<h2 align="center">SSL Badge</h3>
 			<p align="center">Enter domain:<br />
 			<input type="text" name="domain" value=""></p>
 			<p align="center"><input type="checkbox" name="sm" id="chk_sm" value="true"><label for="chk_sm">Small Image</label></p>
@@ -126,6 +127,7 @@
 				echo inline_image($img_path_sm . 'err.svg', 'Error') . "&nbsp;&nbsp;";
 			?></p>
 			<p align="center">&nbsp;</p>
+			<p align="center">This project is not affiliated with or officially supported by SSL Labs.</p>
 			<p align="center"><?php echo info_messages(); ?></p>
 		</body>
 		</html>
@@ -314,9 +316,9 @@
 	function badge_html($test_domain, $sm)
 	{
 		$html = '<a href="https://www.ssllabs.com/ssltest/analyze.html?d=' . $test_domain . '&hideResults=on" target="_blank">' . "\r\n";
-		$html .= '<img title="SSL Labs Grade" src="';
+		$html .= '<img title="SSL Grade" src="';
 		$html .= badge_url($test_domain, $sm);
-		$html .= '" alt="SSL Labs Grade" border="0">' . "\r\n" . '</a>';
+		$html .= '" alt="SSL Grade" border="0">' . "\r\n" . '</a>';
 		return $html;
 	}
 	
