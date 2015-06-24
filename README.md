@@ -1,6 +1,8 @@
 # SSL-Badge
 PHP web application that displays SSL Labs grades as a badge.  Cached assessment reports will be used when available (max age 24 hours).  Schedule the cron command to run daily to prevent it from showing "Testing".
 
+**Demo:** https://timwells.net/ssl_badge/ &nbsp;&nbsp;(Use **timwells.net** as the domain)
+
 ### Badges (90x30)
 
 ![A+](https://timwells.net/ssl_badge/?preview=A%2B)
