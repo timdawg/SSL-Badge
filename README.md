@@ -42,7 +42,7 @@ If the **domain** parameter is not specified, a form will allow the user to gene
 
 ### Config Variables
 
-These config variables can be found at the top of the index.php script
+These config variables can be found in the config.php script
 
 * **$public** - Specifies if the script can be used for any website (true) or restricted to the domains in $allowed_domains [Boolean]
 * **$generate_form** - Specifies if the HTML code generator form should be allowed [Boolean]

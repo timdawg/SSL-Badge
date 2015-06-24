@@ -1,14 +1,6 @@
-<?php
-	//ini_set('display_errors',1);
-	//error_reporting(E_ALL|E_STRICT);
-	
+<?php	
 	// Config Variables
-	$public = true;
-	$generate_form = true;
-	$allowed_domains = array();
-	$img_path = 'images/';
-	$img_path_sm = 'images/sm/';
-	$cache_age = 24;		// max report age from cache
+	require_once 'config.php';
 	
 	// Parameters
 	$test_domain = $_GET['domain'];
