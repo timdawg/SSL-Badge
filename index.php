@@ -72,7 +72,6 @@
 			<p align="center">&nbsp;</p>
 			<p align="center"><button onclick="window.history.back()">&lt; Back</button></p>
 			<p align="center">&nbsp;</p>
-			<p align="center">This project is not affiliated with or officially supported by SSL Labs.</p>
 			<p align="center"><?php echo info_messages() ?></p>
 		</body>
 		</html>
@@ -127,7 +126,6 @@
 				echo inline_image($img_path_sm . 'err.svg', 'Error') . "&nbsp;&nbsp;";
 			?></p>
 			<p align="center">&nbsp;</p>
-			<p align="center">This project is not affiliated with or officially supported by SSL Labs.</p>
 			<p align="center"><?php echo info_messages(); ?></p>
 		</body>
 		</html>
@@ -172,6 +170,7 @@
 			//$text .= htmlspecialchars($messages[$i]) . '<br />';
 			$text .= link_urls($messages[$i]) . '<br />';
 		}
+		$text .= 'This project is not affiliated with or officially supported by SSL Labs.<br />';
 		if($include_version)
 		{
 			$text .= '<br />SSL Labs Engine v' . $info->engineVersion;
