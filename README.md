@@ -68,6 +68,8 @@ If ImageMagick is not installed, the script will use the PNG image (if it exists
 
 This script uses the SSL Labs API (provided free of charge by Qualys SSL Labs).
 
+This project is not affiliated with or officially supported by SSL Labs.
+
 [SSL Labs API Documentation](https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs.md)
 
 [SSL Labs API Terms and conditions](https://www.ssllabs.com/about/terms.html)
