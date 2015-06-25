@@ -1,5 +1,5 @@
 # SSL-Badge
-PHP web application that displays SSL Labs grades as a badge.  Cached assessment reports will be used when available (max age 24 hours).  Schedule the cron command to run daily to prevent it from showing "Testing".
+PHP web application that displays SSL Labs grades as a badge.
 
 **Demo:** https://timwells.net/ssl_badge/ &nbsp;&nbsp;(Use **timwells.net** as the domain)
 
@@ -40,18 +40,24 @@ PHP web application that displays SSL Labs grades as a badge.  Cached assessment
 * **new=true** - Ignore cached assessment results and start a new assessment
 * **text=true** - Output grade only as plain text
 
-If the **domain** parameter is not specified, a form will allow the user to generate the HTML code (if enabled).  This also generates a daily cron command to update the cached report using wget.
+If the **domain** parameter is not specified, a form will allow the user to generate the HTML code (if enabled).  This also generates a cron command to update the cached result using wget.
 
-### Config Variables
+### Configuration Constants
 
-These config variables can be found in the config.php script
+These config variables can be found in the config.php script.  If a constant is not defined, the default value will be used.
 
-* **$public** - Specifies if the script can be used for any website (true) or restricted to the domains in $allowed_domains [Boolean]
-* **$generate_form** - Specifies if the HTML code generator form should be allowed [Boolean]
-* **$allowed_domains** - Allowed domains (if $public = false) [String Array]
-* **$img_path** - Path to large SVG images [String]
-* **$img_path_sm** - Path to small SVG images [String]
-* **$cache_age** - Maximum cached report age (in hours) [Integer]
+* **ALLOW_ANY** - Specifies if the script can be used for any website (true) or restricted to the domains in ALLOWED_DOMAINS [Boolean]
+* **GENERATE_FORM** - Specifies if the HTML code generator form should be allowed [Boolean]
+* **ALLOWED_DOMAINS** - Allowed domains (if ALLOW_ANY = false) [String Array]
+* **IMG_PATH** - Path to large SVG images [String]
+* **IMG_PATH_SM** - Path to small SVG images [String]
+* **REPORT_CACHE_AGE** - Maximum cached report age (in hours) [Integer]
+* **BROWSER_CACHE_AGE** - How long the browser should cache the image / 0 disables browser cache (seconds) [Integer]
+* **APC_CACHE_AGE** - How long the APC should cache the results / 0 disables APC cache (seconds) [Integer]
+
+### Caching
+
+Cached assessment reports from the API server will be used when available (default max age 24 hours).  The APC cache (if available) will also cache the grades to reduce API calls (default for 24 hours).  The vistor's browser will also cache the image (default for 24 hours).  The "Testing" and "Err" badges will not be cached in the APC or browser cache.  When the **new=true** URL parameter is specified, it forces the API server to re-test the website and clears the result from the APC cache.  I recommend scheduling a cron job to run the generated cron command daily, to prevent visitors from seeing the "Testing" badge.
 
 ### Badge Images
 
@@ -60,8 +66,8 @@ The badge images are stored as SVG files.  The php script converts the SVG files
 If ImageMagick is not installed, the script will use the PNG image (if it exists).  Even if ImageMagick is installed, the script can work with the PNG images instead of SVG images.  The script will auto detect which image file is installed.  If the PNG file does not exist and ImageMagick is not installed, then it will just use the SVG image.
 
 ### Dependencies
-* **ImageMagick** is recommended to be installed on the server
 * **PHP-SSLLabs-API Libarary** from [github.com/bjoernr-de/php-ssllabs-api](https://github.com/bjoernr-de/php-ssllabs-api) (included as sslLabsApi.php)
+* **ImageMagick** is recommended to be installed on the server (not required)
 
 
 ### SSL Labs API
