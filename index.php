@@ -1,17 +1,40 @@
 <?php	
-	// Config Variables
-	require_once 'config.php';
+	// Config Include
+	if (file_exists('config.php')) {
+		include('config.php');
+	}
 	
-	// Variables
+	// Default Config Constants (if not defined in config.php)
+	if(!defined('ALLOW_ANY'))
+		define('ALLOW_ANY', true);
+	if(!defined('GENERATE_FORM'))
+		define('GENERATE_FORM', true);
+	if(defined('ALLOWED_DOMAINS'))
+		$allowed_domains = unserialize(ALLOWED_DOMAINS);
+	else
+		$allowed_domains = array();
+	if(!defined('IMG_PATH'))
+		define('IMG_PATH', 'images/');
+	if(!defined('IMG_PATH_SM'))
+		define('IMG_PATH_SM', 'images/sm/');
+	if(!defined('REPORT_CACHE_AGE'))
+		define('REPORT_CACHE_AGE', 24);
+	if(!defined('BROWSER_CACHE_AGE'))
+		define('BROWSER_CACHE_AGE', 86400);
+	if(!defined('APC_CACHE_AGE'))
+		define('APC_CACHE_AGE', 86400);
+		
+	// Constants
 	define('PNG_HEADER', "\211PNG\r\n\032\n");
 	define('SVG_HEADER', "<svg");
+	define('APC_PREFIX', 'ssl_badge_');	
 	
 	// Parameters
 	$test_domain = $_GET['domain'];
 	// Image Path (default to large badges, if &sm=true query string, then use the small badges)
-	$image_path = $img_path;
+	$image_path = IMG_PATH;
 	if($_GET['sm']=='true')
-		$image_path = $img_path_sm;
+		$image_path = IMG_PATH_SM;
 	// As plain text instead of image (default=false)
 	$as_text = false;
 	if($_GET['text']=='true')
@@ -19,32 +42,29 @@
 	// Start new (ignore cache / default uses cache)
 	$start_new = false;
 	$from_cache = true;
+	$rpt_cache_age = REPORT_CACHE_AGE;
 	if($_GET['new']=='true')
 	{
 		$start_new = true;
 		$from_cache = false;
-		$cache_age = NULL;
+		$rpt_cache_age = NULL;
 	}		
+	
+	// Init Variables
+	$apc_cached_grade = false;
 
 	// API
 	require_once 'sslLabsApi.php';
 	$api = new sslLabsApi(true);
 	
-	// (if public is false, the test domain must be in allowed domains)
-	if($test_domain && $test_domain != '' && ($public || in_array($test_domain, $allowed_domains)))
+	// (if ALLOW_ANY is false, the test domain must be in allowed domains)
+	if($test_domain && $test_domain != '' && (ALLOW_ANY || in_array($test_domain, $allowed_domains)))
 	{
-		// Get host information
-		$ssl_host = $api->fetchHostInformation($test_domain, false, $start_new, $from_cache, $cache_age);
-		
-		// Process status
-		if($ssl_host->status == 'READY') {
-			process_report($ssl_host);
-		} else {
-			output_status($ssl_host->status);
-		}
+		if(!cache_read($test_domain))
+			get_report();
 	}
-	// Generate HTML code
-	elseif($generate_form && $_POST['action']=='generate' && ($public || in_array($_POST['domain'], $allowed_domains)))
+	// Generate HTML code response
+	elseif(GENERATE_FORM && $_POST['action']=='generate' && (ALLOW_ANY || in_array($_POST['domain'], $allowed_domains)))
 	{	
 		$test_domain = $_POST['domain'];
 		$sm = false;		
@@ -70,7 +90,7 @@
 				echo badge_html($test_domain, $sm);	
 			?></p>
 			<p align="center">&nbsp;</p>
-			<p align="center"><button onclick="window.history.back()">&lt; Back</button></p>
+			<p align="center"><button onClick="window.history.back()">&lt; Back</button></p>
 			<p align="center">&nbsp;</p>
 			<p align="center"><?php echo info_messages() ?></p>
 		</body>
@@ -78,7 +98,7 @@
 		<?php
 	}
 	// Generate HTML code Form
-	elseif($generate_form && $_POST['action']!='generate')
+	elseif(GENERATE_FORM && $_POST['action']!='generate')
 	{
 		?>
 		<html>
@@ -95,35 +115,35 @@
 			<p align="center"><input type="submit" value="Generate"></p>
 			</form>
 			<p align="center">&nbsp;</p>
-			<p align="center">Cached assessment reports will be used when available (max age <?php echo $cache_age; ?> hours).<br />
+			<p align="center">Cached assessment reports will be used when available (max age <?php echo REPORT_CACHE_AGE; ?> hours).<br />
 			Schedule the cron command to run daily to prevent it from showing "Testing".</p>
 			<p align="center">&nbsp;</p>
 			<p align="center"><b>Badges:</b><br /><?php
-				echo inline_image($img_path . 'aplus.svg', 'A+') . "&nbsp;&nbsp;";
-				echo inline_image($img_path . 'a.svg', 'A') . "&nbsp;&nbsp;";
-				echo inline_image($img_path . 'aminus.svg', 'A-') . "&nbsp;&nbsp;";
-				echo inline_image($img_path . 'b.svg', 'B') . "&nbsp;&nbsp;";
-				echo inline_image($img_path . 'c.svg', 'C') . "&nbsp;&nbsp;";
-				echo inline_image($img_path . 'd.svg', 'D') . "&nbsp;&nbsp;";
-				echo inline_image($img_path . 'f.svg', 'F') . "&nbsp;&nbsp;";
-				echo inline_image($img_path . 'm.svg', 'M (Certificate not valid for domain name)') . "&nbsp;&nbsp;";
-				echo inline_image($img_path . 't.svg', 'T (Server certificate is not trusted)') . "&nbsp;&nbsp;";
-				echo inline_image($img_path . 'calculating.svg', 'Testing') . "&nbsp;&nbsp;";
-				echo inline_image($img_path . 'err.svg', 'Error') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH . 'aplus.svg', 'A+') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH . 'a.svg', 'A') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH . 'aminus.svg', 'A-') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH . 'b.svg', 'B') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH . 'c.svg', 'C') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH . 'd.svg', 'D') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH . 'f.svg', 'F') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH . 'm.svg', 'M (Certificate not valid for domain name)') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH . 't.svg', 'T (Server certificate is not trusted)') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH . 'calculating.svg', 'Testing') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH . 'err.svg', 'Error') . "&nbsp;&nbsp;";
 			?></p>
 			<p align="center">&nbsp;</p>
 			<p align="center"><b>Small Badges:</b><br /><?php
-				echo inline_image($img_path_sm . 'aplus.svg', 'A+') . "&nbsp;&nbsp;";
-				echo inline_image($img_path_sm . 'a.svg', 'A') . "&nbsp;&nbsp;";
-				echo inline_image($img_path_sm . 'aminus.svg', 'A-') . "&nbsp;&nbsp;";
-				echo inline_image($img_path_sm . 'b.svg', 'B') . "&nbsp;&nbsp;";
-				echo inline_image($img_path_sm . 'c.svg', 'C') . "&nbsp;&nbsp;";
-				echo inline_image($img_path_sm . 'd.svg', 'D') . "&nbsp;&nbsp;";
-				echo inline_image($img_path_sm . 'f.svg', 'F') . "&nbsp;&nbsp;";
-				echo inline_image($img_path_sm . 'm.svg', 'M (Certificate not valid for domain name)') . "&nbsp;&nbsp;";
-				echo inline_image($img_path_sm . 't.svg', 'T (Server certificate is not trusted)') . "&nbsp;&nbsp;";
-				echo inline_image($img_path_sm . 'calculating.svg', 'Testing') . "&nbsp;&nbsp;";
-				echo inline_image($img_path_sm . 'err.svg', 'Error') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH_SM . 'aplus.svg', 'A+') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH_SM . 'a.svg', 'A') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH_SM . 'aminus.svg', 'A-') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH_SM . 'b.svg', 'B') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH_SM . 'c.svg', 'C') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH_SM . 'd.svg', 'D') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH_SM . 'f.svg', 'F') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH_SM . 'm.svg', 'M (Certificate not valid for domain name)') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH_SM . 't.svg', 'T (Server certificate is not trusted)') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH_SM . 'calculating.svg', 'Testing') . "&nbsp;&nbsp;";
+				echo inline_image(IMG_PATH_SM . 'err.svg', 'Error') . "&nbsp;&nbsp;";
 			?></p>
 			<p align="center">&nbsp;</p>
 			<p align="center"><?php echo info_messages(); ?></p>
@@ -131,6 +151,7 @@
 		</html>
 		<?php
 	}
+	// Unauthorized Access
 	else
 	{
 		if(version_compare(phpversion(), '5.4.0', '>='))
@@ -145,15 +166,15 @@
         <body>
             <h2>Access Denied</h2>
             <p><?php 
-				if(!$generate_form && !$public) {
+				if(!GENERATE_FORM && !ALLOW_ANY) {
 					echo 'This script is restriced to defined domain names and the generate form is disabled!';
-				} elseif(!$public) {
+				} elseif(!ALLOW_ANY) {
 					echo 'This script is restriced to defined domain names!';
-				} elseif(!$generate_form) { 
+				} elseif(!GENERATE_FORM) { 
 	            	echo 'The generate form is disabled for this script!';
 				} ?></p>
-            <?php if($generate_form && $_POST['action']=='generate') { ?>
-			<p><button onclick="window.history.back()">&lt; Back</button></p>
+            <?php if(GENERATE_FORM && $_POST['action']=='generate') { ?>
+			<p><button onClick="window.history.back()">&lt; Back</button></p>
             <?php } ?>
         </body>
         </html>
@@ -182,17 +203,81 @@
 		}
 		return $text;
 	}
-		
-	// Process ready report
-	function process_report($ssl_host)
+	
+	function cache_read($in_domain)
 	{
-		$ssl_endpoints = $ssl_host->endpoints;
+		global $apc_cached_grade;
+		global $from_cache;
 		
-		// Get Grade from first endpoint
-		if($ssl_endpoints[0]->grade == NULL && $ssl_endpoints[0]->statusMessage == 'Certificate not valid for domain name')
-			output_grade('M');
-		else
-			output_grade($ssl_endpoints[0]->grade);
+		// Check that APC_CACHE_AGE > 0 and that APC is enabled
+		if(APC_CACHE_AGE > 0 && extension_loaded('apc') && ini_get('apc.enabled'))
+		{
+			if(apc_exists(APC_PREFIX & $in_domain))
+			{
+				// Don't use cached report if user requested a fresh report
+				if($from_cache)
+				{
+					 $grade = apc_fetch(APC_PREFIX & $in_domain, &$success);
+					 if($success)
+					 {
+						 $apc_cached_grade = true;
+						 output_grade($grade);
+						 return true;
+					 }
+				}
+				else
+				{
+					// Clear entry from cache if user requested fresh report
+					apc_delete($in_domain);
+				}
+			}
+		}
+		return false;
+	}
+	
+	// Store the grade in the APC cache
+	function cache_store($in_domain, $in_grade)
+	{
+		// Check that APC_CACHE_AGE > 0 and that APC is enabled
+		if(APC_CACHE_AGE > 0 && extension_loaded('apc') && ini_get('apc.enabled'))
+		{
+			apc_store(APC_PREFIX & $in_domain, $in_grade, APC_CACHE_AGE);
+		}
+	}
+	
+	// Get Report from SSL Labs API
+	function get_report()
+	{
+		global $api;
+		global $start_new;
+		global $from_cache;
+		global $rpt_cache_age;
+		global $test_domain;
+		
+		// Get host information
+		$ssl_host = $api->fetchHostInformation($test_domain, false, $start_new, $from_cache, $rpt_cache_age);
+		
+		// Process status
+		if($ssl_host->status == 'READY') 
+		{
+			$ssl_endpoints = $ssl_host->endpoints;
+		
+			// Get Grade from first endpoint
+			if($ssl_endpoints[0]->grade == NULL && $ssl_endpoints[0]->statusMessage == 'Certificate not valid for domain name')
+			{
+				cache_store($test_domain, 'M');
+				output_grade('M');
+			}
+			else
+			{
+				cache_store($test_domain, $ssl_endpoints[0]->grade);
+				output_grade($ssl_endpoints[0]->grade);
+			}
+		} 
+		else 
+		{
+			output_status($ssl_host->status);
+		}
 	}
 	
 	// Output status as image or text
@@ -209,9 +294,6 @@
 				else
 					output_image($image_path . 'calculating.svg', false);
 				break;
-			/*case 'READY':	// Report is ready
-				process_report($ssl_host);
-				break;*/
 			default: // ERROR (default to this if something else is returned)
 				if($as_text)
 					output_text($in_status);
@@ -373,18 +455,31 @@
 		return $html;
 	}
 	
+	// Output HTTP Cache Headers
+	function cache_headers($use_cache = true)
+	{		
+		global $apc_cached_grade;
+		
+		if(BROWSER_CACHE_AGE > 0 && $use_cache==true) {
+			// Cache badge in browswer
+			header('Cache-Control: public, max-age=' . BROWSER_CACHE_AGE);
+		} else {
+			// Do not cache badge
+			header('Cache-Control: no-cache, no-store');	
+			header('Pragma: no-cache');			
+		}
+		// Extra header showing if the result came from the APC cache
+		header('X-Cached-Result: ' . ($apc_cached_grade ? 'true' : 'false'));	
+	}
+	
+	
 	// Output text
 	function output_text($text, $cache = true)
 	{
 		ob_clean();
-		if($cache==true) {
-			header('Cache-Control: public, max-age=86400');
-		} else {
-			header('Cache-Control: no-cache, no-store');	
-			header('Pragma: no-cache');			
-		}
+		cache_headers($cache);
 		header('Content-Disposition: inline; filename="ssl_badge.txt"');
-		header('Content-Type: text/plain');		
+		header('Content-Type: text/plain');			
 		
 		echo $text . "\r\n";
 		exit;
@@ -392,15 +487,10 @@
 		
 	// Output image over http stream
 	function output_image($img_file, $cache = true)
-	{
+	{		
 		$image = convert_svg_png($img_file);
 		ob_clean();
-		if($cache==true) {
-			header('Cache-Control: public, max-age=86400');
-		} else {
-			header('Cache-Control: no-cache, no-store');	
-			header('Pragma: no-cache');			
-		}
+		cache_headers($cache);
 		if(substr($image, 0, strlen(PNG_HEADER))==PNG_HEADER)
 		{
 			header('Content-Disposition: inline; filename="ssl_badge.png"');
@@ -410,7 +500,7 @@
 		{
 			header('Content-Disposition: inline; filename="ssl_badge.svg"');
 			header('Content-Type: image/svg+xml');		
-		}		
+		}			
 		echo $image;
 		exit;
 	}
