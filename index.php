@@ -81,7 +81,7 @@
 			<p align="center">HTML Code:<br /><textarea rows="6" cols="80" readonly><?php	
 				echo htmlspecialchars(badge_html($test_domain, $sm));
 			?></textarea></p>
-			<p align="center">Daily Cron Command (to update cached report):<br /><textarea rows="4" cols="80" readonly><?php	
+			<p align="center">Daily Cron Command (to update cached result):<br /><textarea rows="4" cols="80" readonly><?php	
 				echo htmlspecialchars('wget -O - -q "');
 				echo htmlspecialchars(badge_url($test_domain, false, true, true, true));
 				echo htmlspecialchars('"');
