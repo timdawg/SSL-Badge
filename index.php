@@ -217,7 +217,7 @@
 				// Don't use cached report if user requested a fresh report
 				if($from_cache)
 				{
-					 $grade = apc_fetch(APC_PREFIX & $in_domain, &$success);
+					 $grade = apc_fetch(APC_PREFIX & $in_domain, $success);
 					 if($success)
 					 {
 						 $apc_cached_grade = true;
