@@ -105,22 +105,21 @@
 		<body>
 			<h2 align="center">SSL Badge</h3>
 			<p align="center"><?php echo $test_domain; ?></p>
-			<p align="center">HTML Code:<br /><textarea rows="6" cols="80" readonly><?php	
+			<p align="center">HTML Code:<br /><textarea rows="6" cols="100" readonly><?php	
 				echo htmlspecialchars(badge_html($test_domain, $sm));
 			?></textarea></p>
-			<p align="center">Daily Cron Command (clear cache and start new test):<br /><textarea rows="4" cols="80" readonly><?php	
+			<p align="center">Daily Cron Command (to update cached result):<br /><textarea rows="6" cols="100" readonly><?php	
+				echo "# Clear Cache and Start Test\r\n";
 				echo htmlspecialchars('wget -O - -q "');
 				echo htmlspecialchars(badge_url($test_domain, false, true, true, true));
 				echo htmlspecialchars('"');
-			?></textarea></p>
-			<p align="center">Daily Cron Command 2 (run 5 minutes later to get test result):<br /><textarea rows="4" cols="80" readonly><?php	
+				echo "\r\n# Wait 5 minutes for test to complete\r\n";
+				echo "sleep 5m";
+				echo "\r\n# Clear Cache and Start Test\r\n";
 				echo htmlspecialchars('wget -O - -q "');
 				echo htmlspecialchars(badge_url($test_domain, false, true, false, true));
 				echo htmlspecialchars('"');
 			?></textarea></p>
-			<p align="center"><?php	
-				echo badge_html($test_domain, $sm);	
-			?></p>
 			<p align="center">&nbsp;</p>
 			<p align="center"><button onClick="window.history.back()">&lt; Back</button></p>
 			<p align="center">&nbsp;</p>
