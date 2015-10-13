@@ -25,6 +25,14 @@
 		define('APC_CACHE_AGE', 86400);
 	if(!defined('MYSQL_CACHE_AGE'))
 		define('MYSQL_CACHE_AGE', 0);
+	if(!defined('MYSQL_SERVER'))
+		define('MYSQL_SERVER', '');
+	if(!defined('MYSQL_USERNAME'))
+		define('MYSQL_USERNAME', '');
+	if(!defined('MYSQL_PASSWORD'))
+		define('MYSQL_PASSWORD', '');
+	if(!defined('MYSQL_DATABASE'))
+		define('MYSQL_DATABASE', '');
 		
 	// Constants
 	define('PNG_HEADER', "\211PNG\r\n\032\n");
