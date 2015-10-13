@@ -76,7 +76,7 @@ The badge images are stored as SVG files.  The php script converts the SVG files
 If ImageMagick is not installed, the script will use the PNG image (if it exists).  Even if ImageMagick is installed, the script can work with the PNG images instead of SVG images.  The script will auto detect which image file is installed.  If the PNG file does not exist and ImageMagick is not installed, then it will just use the SVG image.
 
 ### Dependencies
-* **PHP-SSLLabs-API Libarary** from [github.com/bjoernr-de/php-ssllabs-api](https://github.com/bjoernr-de/php-ssllabs-api) (included as sslLabsApi.php)
+* **PHP-SSLLabs-API Library** from [github.com/bjoernr-de/php-ssllabs-api](https://github.com/bjoernr-de/php-ssllabs-api) (included as sslLabsApi.php)
 * **ImageMagick** is recommended to be installed on the server (not required)
 
 
