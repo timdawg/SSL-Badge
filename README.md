@@ -54,6 +54,16 @@ These config variables can be found in the config.php script.  If a constant is 
 * **REPORT_CACHE_AGE** - Maximum cached report age (in hours) [Integer]
 * **BROWSER_CACHE_AGE** - How long the browser should cache the image / 0 disables browser cache (seconds) [Integer]
 * **APC_CACHE_AGE** - How long the APC should cache the results / 0 disables APC cache (seconds) [Integer]
+* **MYSQL_CACHE_AGE** - How long to cache results into a MySQL database / 0 disables MySQL cache (seconds) [Integer]
+* **MYSQL_SERVER** - MySQL Host Server [String]
+* **MYSQL_USERNAME** - MySQL Username [String]
+* **MYSQL_PASSWORD** - MySQL Password [String]
+* **MYSQL_DATABASE** - MySQL Database Name [String]
+
+### MySQL Notes
+
+* Enabling MySQL (see **MYSQL_CACHE_AGE**) will override the APC setting to use MySQL instead of APC for caching.
+* The database table will be created automatically, if it does not exist.
 
 ### Caching
 

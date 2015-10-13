@@ -23,11 +23,28 @@
 		define('BROWSER_CACHE_AGE', 86400);
 	if(!defined('APC_CACHE_AGE'))
 		define('APC_CACHE_AGE', 86400);
+	if(!defined('MYSQL_CACHE_AGE'))
+		define('MYSQL_CACHE_AGE', 0);
 		
 	// Constants
 	define('PNG_HEADER', "\211PNG\r\n\032\n");
 	define('SVG_HEADER', "<svg");
 	define('APC_PREFIX', 'ssl_badge_');	
+	
+	// Database Include
+	if (MYSQL_CACHE_AGE > 0) {
+		$sql_con = mysql_connect(MYSQL_SERVER, MYSQL_USERNAME, MYSQL_PASSWORD) or die('Could not connect: ' . mysql_error());
+		mysql_select_db(MYSQL_DATABASE) or die('Could not select database');
+		
+		$db_init = mysql_query('SELECT 1 from `ssl_badge_cache` LIMIT 1');
+		
+		if($db_init == false)
+		{
+			$query = 'CREATE TABLE `ssl_badge_cache` (`id` int(11) NOT NULL auto_increment, `domain` varchar(255) NOT NULL, `grade` varchar(2) NOT NULL,';
+			$query .= '`expires` datetime NOT NULL, PRIMARY KEY  (`id`)) ENGINE=MyISAM  DEFAULT CHARSET=utf8;';
+			mysql_query($query);
+		}
+	}	
 	
 	// Parameters
 	$test_domain = $_GET['domain'];
@@ -51,7 +68,9 @@
 	}		
 	
 	// Init Variables
-	$apc_cached_grade = false;
+	$apc_cached_grade = false;	
+	$mysql_cached_grade = false;
+	$mysql_cached_expires = NULL;
 
 	// API
 	require_once 'sslLabsApi.php';
@@ -81,9 +100,14 @@
 			<p align="center">HTML Code:<br /><textarea rows="6" cols="80" readonly><?php	
 				echo htmlspecialchars(badge_html($test_domain, $sm));
 			?></textarea></p>
-			<p align="center">Daily Cron Command (to update cached result):<br /><textarea rows="4" cols="80" readonly><?php	
+			<p align="center">Daily Cron Command (clear cache and start new test):<br /><textarea rows="4" cols="80" readonly><?php	
 				echo htmlspecialchars('wget -O - -q "');
 				echo htmlspecialchars(badge_url($test_domain, false, true, true, true));
+				echo htmlspecialchars('"');
+			?></textarea></p>
+			<p align="center">Daily Cron Command 2 (run 5 minutes later to get test result):<br /><textarea rows="4" cols="80" readonly><?php	
+				echo htmlspecialchars('wget -O - -q "');
+				echo htmlspecialchars(badge_url($test_domain, false, true, false, true));
 				echo htmlspecialchars('"');
 			?></textarea></p>
 			<p align="center"><?php	
@@ -180,6 +204,11 @@
         </html>
 	<?php		
 	}
+	if(MYSQL_CACHE_AGE > 0)
+	{
+		// Closing connection
+		mysql_close($sql_con);
+	}
 
 	function info_messages($include_version = true, $include_assessments = false)
 	{
@@ -206,11 +235,39 @@
 	
 	function cache_read($in_domain)
 	{
-		global $apc_cached_grade;
+		global $apc_cached_grade, $mysql_cached_grade, $mysql_cached_expires;
 		global $from_cache;
 		
+		// Check that MYSQL_CACHE_AGE > 0
+		if(MYSQL_CACHE_AGE > 0)
+		{
+			// Don't use cached report if user requested a fresh report
+			if($from_cache)
+			{
+				$query = 'SELECT * FROM `ssl_badge_cache` WHERE `expires` > NOW() AND `domain` = "' . $in_domain . '" ORDER BY `expires` LIMIT 0, 1';
+				$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+				
+				if (mysql_num_rows($result) > 0) 
+				{
+					$row = mysql_fetch_array($result, MYSQL_ASSOC);
+					
+					$grade = $row['grade'];
+					$mysql_cached_grade = true;
+					$mysql_cached_expires = strtotime($row['expires']);
+					output_grade($grade);
+					return true;
+				}
+				mysql_free_result($result);
+			}
+			else
+			{
+				// Clear entry from MySQL cache if user requested fresh report
+				$query = 'DELETE FROM `ssl_badge_cache` WHERE `domain` = "' . $in_domain . '"';
+				mysql_query($query);
+			}
+		}
 		// Check that APC_CACHE_AGE > 0 and that APC is enabled
-		if(APC_CACHE_AGE > 0 && extension_loaded('apc') && ini_get('apc.enabled'))
+		elseif(APC_CACHE_AGE > 0 && extension_loaded('apc') && ini_get('apc.enabled'))
 		{
 			if(apc_exists(APC_PREFIX & $in_domain))
 			{
@@ -232,14 +289,25 @@
 				}
 			}
 		}
+		
 		return false;
 	}
 	
 	// Store the grade in the APC cache
 	function cache_store($in_domain, $in_grade)
 	{
+		// Check that MYSQL_CACHE_AGE > 0
+		if(MYSQL_CACHE_AGE > 0)
+		{
+			// Clear any entries from MySQL cache
+			$query = 'DELETE FROM `ssl_badge_cache` WHERE `domain` = "' . $in_domain . '"';
+			mysql_query($query);
+			// Insert record
+			$query = 'INSERT INTO `ssl_badge_cache` (`domain`, `grade`, `expires`) VALUES ("'. $in_domain . '", "' . $in_grade . '", DATE_ADD(NOW(), INTERVAL ' . MYSQL_CACHE_AGE . ' SECOND));';
+			mysql_query($query);
+		}
 		// Check that APC_CACHE_AGE > 0 and that APC is enabled
-		if(APC_CACHE_AGE > 0 && extension_loaded('apc') && ini_get('apc.enabled'))
+		elseif(APC_CACHE_AGE > 0 && extension_loaded('apc') && ini_get('apc.enabled'))
 		{
 			apc_store(APC_PREFIX & $in_domain, $in_grade, APC_CACHE_AGE);
 		}
@@ -458,7 +526,7 @@
 	// Output HTTP Cache Headers
 	function cache_headers($use_cache = true)
 	{		
-		global $apc_cached_grade;
+		global $apc_cached_grade, $mysql_cached_grade, $mysql_cached_expires;
 		
 		if(BROWSER_CACHE_AGE > 0 && $use_cache==true) {
 			// Cache badge in browswer
@@ -468,8 +536,19 @@
 			header('Cache-Control: no-cache, no-store');	
 			header('Pragma: no-cache');			
 		}
-		// Extra header showing if the result came from the APC cache
-		header('X-Cached-Result: ' . ($apc_cached_grade ? 'true' : 'false'));	
+		// Extra headers with cache info
+		if($mysql_cached_grade) {
+			header('X-Cached-Result: true');
+			header('X-Cached-Source: MySQL');
+			header('X-Cached-Expires: ' . date('Y-m-d H:i:s', $mysql_cached_expires));	
+		}
+		elseif($apc_cached_grade) {
+			header('X-Cached-Result: true');	
+			header('X-Cached-Source: APC');
+		}
+		else {
+			header('X-Cached-Result: false');	
+		}
 	}
 	
 	
